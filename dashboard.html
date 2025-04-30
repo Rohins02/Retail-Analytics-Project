@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retail Analytics - Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard">Retail Analytics</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/search">Search</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/upload">Upload</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/list_files">View Files</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <div class="col-md-12 mb-4">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="m-0">Retail KPI Dashboard</h3>
+                    </div>
+                    <div class="card-body">
+                        <h4>Welcome, {{ username }}!</h4>
+                        <p>This dashboard provides insights into customer engagement and spending behaviors.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Total Sales</h5>
+                        <h2 class="display-4">{{ metrics.total_sales if metrics is defined else "$1.22M" }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Avg. Sales per Unit</h5>
+                        <h2 class="display-4">{{ metrics.avg_sales_per_unit if metrics is defined else "$5.44" }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Sales per Labor Hour</h5>
+                        <h2 class="display-4">{{ metrics.sales_per_labor_hour if metrics is defined else "$273.80" }}</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title">Avg. Sales Revenue per Hour</h5>
+                        <h2 class="display-4">{{ metrics.avg_sales_revenue_per_hour if metrics is defined else "$178.67" }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Monthly Customer Visits & Transactions</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="monthlyChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Sales by Division</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="divisionChart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Customer Segments</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="segmentChart" width="400" height="400"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Top Products</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="productsChart" width="400" height="400"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Churn Risk</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="churnChart" width="400" height="400"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    var chartData = {
+        months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        visitorsData: [30, 52, 25, 40, 35, 45, 28, 50, 35, 60, 40, 25],
+        transactionsData: [65, 75, 50, 60, 55, 70, 58, 85, 70, 90, 65, 55],
+        divisionLabels: ["Women", "Men", "Children"],
+        divisionData: [45000, 65000, 50000],
+        segmentLabels: ["Young Singles", "Young Families", "Mature Families", "Seniors"],
+        segmentData: [25, 35, 30, 10],
+        productLabels: ["Product 1", "Product 2", "Product 3", "Product 4", "Product 5"],
+        productData: [65, 59, 55, 48, 42],
+        churnLabels: ["Low Risk", "Medium Risk", "High Risk"],
+        churnData: [65, 25, 10]
+    };
+
+    document.addEventListener('DOMContentLoaded', function() {
+        var monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+        var monthlyChart = new Chart(monthlyCtx, {
+            type: 'bar',
+            data: {
+                labels: chartData.months,
+                datasets: [{
+                    label: 'Visitors',
+                    data: chartData.visitorsData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Transactions',
+                    data: chartData.transactionsData,
+                    backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        var divisionCtx = document.getElementById('divisionChart').getContext('2d');
+        var divisionChart = new Chart(divisionCtx, {
+            type: 'bar',
+            data: {
+                labels: chartData.divisionLabels,
+                datasets: [{
+                    label: 'Sales ($)',
+                    data: chartData.divisionData,
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(54, 162, 235, 0.5)',
+                        'rgba(153, 102, 255, 0.5)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(153, 102, 255, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        var segmentCtx = document.getElementById('segmentChart').getContext('2d');
+        var segmentChart = new Chart(segmentCtx, {
+            type: 'pie',
+            data: {
+                labels: chartData.segmentLabels,
+                datasets: [{
+                    label: 'Segments',
+                    data: chartData.segmentData,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.5)',
+                        'rgba(54, 162, 235, 0.5)',
+                        'rgba(255, 206, 86, 0.5)',
+                        'rgba(75, 192, 192, 0.5)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            }
+        });
+        
+        var productsCtx = document.getElementById('productsChart').getContext('2d');
+        var productsChart = new Chart(productsCtx, {
+            type: 'bar',
+            data: {
+                labels: chartData.productLabels,
+                datasets: [{
+                    label: 'Sales',
+                    data: chartData.productData,
+                    backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                scales: {
+                    x: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+        
+        var churnCtx = document.getElementById('churnChart').getContext('2d');
+        var churnChart = new Chart(churnCtx, {
+            type: 'doughnut',
+            data: {
+                labels: chartData.churnLabels,
+                datasets: [{
+                    label: 'Churn Risk',
+                    data: chartData.churnData,
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.5)',
+                        'rgba(255, 206, 86, 0.5)',
+                        'rgba(255, 99, 132, 0.5)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            }
+        });
+    });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
